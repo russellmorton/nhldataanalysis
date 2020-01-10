@@ -1,0 +1,167 @@
+---
+title: "Lululemon Example Project - NHL Data"
+author: "Russell Morton"
+output: html_notebook
+---
+<br>
+The following R notebook contains an example analysis project using National Hockey League player and team data from 2007-2019. Whilst there are a number of columns present in the data sets, this analysis is concerned with investigating two and modelling two scenarios:
+
+- Scenario 1: Does time on the ice affect the number of expected goals among all players?
+- Scenario 2: Does position proivide an indication of the number of goals?
+<br>
+
+The data is available on GitHub at [NHL Data](https://github.com/jamesmartherus/nhldata).
+
+The primary packages for analysis used in this sample project are from the [Tidyverse](https://www.tidyverse.org/) group of packages:
+
+```{r}
+library(tidyverse)
+library(modelr)
+options(na.action = na.warn)
+```
+<br>
+The data is sourced from GitHub using:
+
+```{r}
+devtools::install_github("jamesmartherus/nhldata",force=TRUE)
+library(nhldata)
+```
+<br>
+For ease of use the variables are added to the Global Environment:
+```{r}
+skaters = nhldata::skaters
+teams = nhldata::teams
+head(skaters)
+head(teams)
+```
+
+<br>
+
+The columns of interest to are:
+
+- g (The number of goals scored for a player per season)
+- toi (The time on the ice for each player per season)
+
+We begin with a visualisation of the number of goals scored versus time on the ice for all players:
+
+```{r}
+ggplot(skaters,aes(x=toi,y=g))+geom_point(color="firebrick1")+ggtitle("Goals vs Time on the Ice")+labs(y="Goals",x="Time on the Ice")
+```
+
+<br>
+
+As could be expected, the number of goals increases with the amount of ice team players enjoy. There does appear to be two player distributions which can be further investigated. Before investigating this grouping further, we model the data as described above.
+
+<br>
+
+```{r}
+model1 <- lm(g~toi,data=skaters)
+summary(model1)
+```
+
+<br>
+
+From the model summary it can be concluded that for the dataset as a whole, Time on the Ice does provides a powerful measure for predicting the number of goals based on a players time on the ice. The R-squared statistic is however low and the model requires further refinement.
+
+Investigating this further, the plot is redrawn this times using player position as a color indicator.
+
+<br>
+
+```{r}
+ggplot(skaters,aes(x=toi,y=g))+geom_point(aes(color=position))+ggtitle("Goals vs Time on the Ice")+labs(y="Goals",x="Time on the Ice")
+```
+
+<br>
+
+The distribution differences become clearer throught the visualisation, showing that defenders "D" tend to score less goals than forwards for similar amounts of time on the ice. Whilst expected, this is important to highlight for the purposes of the broader data modelling.
+
+Next, similar plots are created for each of the different positions.
+
+<br>
+
+
+```{r}
+ggplot(skaters,aes(x=toi,y=g))+geom_point(aes(color=position))+ggtitle("Goals vs Time on the Ice","by Position")+labs(y="Goals",x="Time on the Ice")+facet_wrap(vars(position))
+```
+
+<br>
+
+The distribution of the defence players' data is clearly different to that of the forwards and as such the data will be segmented along these lines.
+
+<br>
+
+```{r}
+skaters = skaters %>%  mutate(positioncategory = if_else(position == "D", 'Defence', 'Forward'))
+head(skaters)
+```
+
+<br>
+
+```{r}
+ggplot(skaters,aes(x=toi,y=g))+geom_point(aes(color=positioncategory))+ggtitle("Goals vs Time on the Ice","by Position Category")+labs(y="Goals",x="Time on the Ice")+facet_wrap(vars(positioncategory))
+```
+
+<br>
+
+```{r}
+defence = subset(skaters,positioncategory == "Defence")
+forwards = subset(skaters,positioncategory == "Forward")
+head(defence)
+head(forwards)
+```
+
+<br>
+
+Next models are fitted for the Defence and Forwards data sets respectively.
+
+<br>
+
+### Defence Model
+
+```{r}
+dmodel <- lm(g~poly(toi,3),data=defence)
+summary(dmodel)
+```
+
+<br>
+
+Using R-squared as a goodness of fit indicator, only 38% of the variation of the data is explained in the model so further model development may be required.
+
+<br>
+
+```{r}
+dgrid = data_grid(defence,toi)
+dgrid = add_predictions(dgrid,dmodel,var="pred")
+ggplot(defence,aes(x=toi,y=g))+geom_point(color="firebrick1")+geom_line(data=dgrid,aes(y=pred,x=toi))
+```
+
+<br>
+
+### Forwards Model
+
+```{r}
+fmodel <- lm(g ~ poly(toi,3), data=forwards)
+summary(fmodel)
+```
+
+<br>
+
+Using R-squared as a goodness of fit indicator, only 67% of the variation of the data is explained in the model.
+
+<br>
+
+```{r}
+fgrid = data_grid(forwards,toi)
+fgrid = add_predictions(fgrid,fmodel,var="pred")
+ggplot(forwards,aes(x=toi,y=g))+geom_point(color="firebrick1")+geom_line(data=fgrid,aes(y=pred,x=toi))
+```
+
+### Conclusion
+
+Based on the evidence presented, the following conclusions can be drawn:
+
+- It has been show that increased time on the ice leads to increased goal production
+- Position is a clear indicator for the number of expected goals
+
+
+
