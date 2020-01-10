@@ -23,7 +23,7 @@ options(na.action = na.warn)
 The data is sourced from GitHub using:
 
 ```{r}
-devtools::install_github("jamesmartherus/nhldata",force=TRUE)
+devtools::install_github("jamesmartherus/nhldata")
 library(nhldata)
 ```
 <br>
