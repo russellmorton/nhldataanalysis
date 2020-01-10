@@ -10,6 +10,8 @@ The following R notebook contains an example analysis project using National Hoc
 - Scenario 2: Does position proivide an indication of the number of goals?
 <br>
 
+The project is hosted on GitHub at https://github.com/russellmorton/nhldataanalysis.
+
 The data is available on GitHub at [NHL Data](https://github.com/jamesmartherus/nhldata).
 
 The primary packages for analysis used in this sample project are from the [Tidyverse](https://www.tidyverse.org/) group of packages:
